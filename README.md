@@ -153,13 +153,43 @@ what is already there wins unless you say otherwise.
 
 ## Benchmark
 
-Not measured against `python-dotenv`, which is the obvious comparison and not a fair one: it
-hands back strings and this reads types, so the two are doing different amounts of work on
-purpose. Timing them against each other would produce a number saying this is slower at a job it
-is not doing.
+Against `python-dotenv` 1.2.3, on Python 3.13.5, reading the same 23-pair file. Interleaved
+runs, median of five.
 
-Either way, a `.env` file is read once at boot and has perhaps thirty lines in it. Where an
-application is slow to start, this is not why.
+**Read what each one does before reading the numbers**, because they are not doing the same
+work — in both directions:
+
+| | `quillstack-dotenv` | `python-dotenv` |
+| --- | --- | --- |
+| `A=true` | `True` | `'true'` |
+| `B=5432` | `5432` | `'5432'` |
+| `C=${A}` | `'${A}'` | `'true'` — expanded |
+| multi-line values | no | yes |
+| `${MISSING:-fallback}` | no | yes |
+| escapes inside quotes | no | yes |
+
+So one of them reads types and the other builds a small language. Now the numbers:
+
+| | Per load | Relative |
+| --- | --- | --- |
+| **quillstack-dotenv** | **32.0 µs** | — |
+| python-dotenv | 459.2 µs | 14× |
+
+**That is not the number that matters**, because a `.env` file is read once. What an application
+pays is the whole thing — importing the library and loading the file, over 25 process starts:
+
+| | Whole process | Of which is the library |
+| --- | --- | --- |
+| bare `python`, importing nothing | 14.49 ms | — |
+| **quillstack-dotenv** | **19.38 ms** | **4.9 ms** |
+| python-dotenv | 25.84 ms | 11.4 ms |
+
+About 70% of that is Python starting, and no `.env` library can do anything about it. Choosing
+between these two moves a boot by six milliseconds.
+
+Being faster because you do less is not being faster. If you want multi-line values, defaults
+inside `${…}`, or escapes, `python-dotenv` has them and this does not — and it is the more
+popular library in this ecosystem by a wide margin, which is worth knowing when you pick.
 
 ## Tests
 

@@ -1,6 +1,6 @@
 [project]
 name = "quillstack-dotenv"
-version = "0.1.0"
+version = "0.1.1"
 description = "Reads a .env file. Values keep the type they plainly have, and nothing is expanded unless you ask for it."
 readme = "README.md"
 license = "MIT"
