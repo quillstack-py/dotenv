@@ -168,24 +168,31 @@ work — in both directions:
 | `${MISSING:-fallback}` | no | yes |
 | escapes inside quotes | no | yes |
 
-So one of them reads types and the other builds a small language. Now the numbers:
+So one of them reads types and the other builds a small language. Now the numbers, measured
+with [quillstack-benchmark](https://github.com/quillstack-py/benchmark) — interleaved runs, the
+median of five, versions read from what is installed:
 
-| | Per load | Relative |
+| | Version |
+| --- | --- |
+| python-dotenv | 1.2.3 |
+| quillstack-dotenv | 0.1.1 |
+
+| | Per call | Relative |
 | --- | --- | --- |
-| **quillstack-dotenv** | **32.0 µs** | — |
-| python-dotenv | 459.2 µs | 14× |
+| **quillstack-dotenv** | **31.3 µs** | — |
+| python-dotenv | 446.9 µs | 14.3× |
 
 **That is not the number that matters**, because a `.env` file is read once. What an application
-pays is the whole thing — importing the library and loading the file, over 25 process starts:
+pays is the whole thing — importing the library and loading the file:
 
 | | Whole process | Of which is the library |
 | --- | --- | --- |
-| bare `python`, importing nothing | 14.49 ms | — |
-| **quillstack-dotenv** | **19.38 ms** | **4.9 ms** |
-| python-dotenv | 25.84 ms | 11.4 ms |
+| the interpreter, importing nothing | 15.75 ms | — |
+| **quillstack-dotenv** | **20.25 ms** | **4.50 ms** |
+| python-dotenv | 28.77 ms | 13.02 ms |
 
-About 70% of that is Python starting, and no `.env` library can do anything about it. Choosing
-between these two moves a boot by six milliseconds.
+About three quarters of that is Python starting, and no `.env` library can do anything about it.
+Choosing between these two moves a boot by eight milliseconds.
 
 Being faster because you do less is not being faster. If you want multi-line values, defaults
 inside `${…}`, or escapes, `python-dotenv` has them and this does not — and it is the more
